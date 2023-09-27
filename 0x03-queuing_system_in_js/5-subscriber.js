@@ -1,16 +1,22 @@
-/* eslint-disable */
-const redis = require('redis');
-const client = redis.createClient();
+import redis from 'redis';
 
-client.on('ready', () => console.log('Redis client connected to the server'));
-client.on('error', (error) => console.log(`Redis client not connected to the server: ${error}`));
+const subscriber = redis.createClient();
 
-const sub_channel = 'holberton school channel'
-client.subscribe(sub_channel);
-client.on('message', (channel, message) => {
-  console.log(message);
-  if (message === 'KILL_SERVER') {
-    client.unsubscribe(sub_channel);
-    client.quit();
-  }
-})
+subscriber.on('connect', function() {
+    console.log('Redis client connected to the server');
+});
+
+subscriber.on('error', function(error) {
+  console.error(`Redis client not connected to the server: ${error.message}`);
+});
+
+subscriber.subscribe('holberton school channel');
+
+subscriber.on('message', function(channel, message) {
+    console.log(message);
+
+    if (message === 'KILL_SERVER') {
+        subscriber.unsubscribe(channel);
+        subscriber.quit();
+    }
+});

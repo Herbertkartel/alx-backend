@@ -1,18 +1,23 @@
-/* eslint-disable */
-const kue = require('kue'),
-      queue = kue.createQueue();
+import kue from 'kue';
 
-const blPhNums = ['4153518780', '4153518781'];
-const maxConcurrentProcesses = 2;
+const queue = kue.createQueue();
 
-const sendNotification = (phoneNumber, message, job, done) => {
-  if (blPhNums.includes(phoneNumber)) done(new Error(`Phone number ${phoneNumber} is blacklisted`));
- 
-  job.progress(0, 50, 100);
-  console.log(`Sending notification to ${phoneNumber}, with message: ${message}`);
-  done();
-};
+const blacklist = ['4153518780', '4153518781'];
 
-queue.process('push_notification_code_2', maxConcurrentProcesses, (job, done) => {
-  sendNotification(job.data.phoneNumber, job.data.message, job, done);
+function sendNotification(phoneNumber, message, job, done) {
+  job.progress(0, 100);
+
+  if (!blacklist.includes(phoneNumber)) {
+    job.progress(50, 100);
+    console.log(`Sending notification to ${phoneNumber}, with message: ${message}`)
+    done();
+  } else {
+    done(Error(`Phone number ${phoneNumber} is blacklisted`));
+  }
+}
+
+queue.process('push_notification_code_2', 2, (job, done) => {
+  const { phoneNumber, message } = job.data;
+
+  sendNotification(phoneNumber, message, job, done);
 });
